@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong Game</title>
+    <style>
+        canvas {
+            display: block;
+            margin: auto;
+            background-color: black;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        document.body.appendChild(canvas);
+
+        canvas.width = 600;
+        canvas.height = 400;
+
+        // Paddle A (Left paddle controlled by the user)
+        let paddleA = {
+            x: 10,
+            y: canvas.height / 2 - 50,
+            width: 10,
+            height: 100,
+            color: "white",
+            dy: 5
+        };
+
+        // Paddle B (Right paddle controlled by a fixed AI)
+        let paddleB = {
+            x: canvas.width - 20,
+            y: canvas.height / 2 - 50,
+            width: 10,
+            height: 100,
+            color: "white",
+            dy: 2 // Adjusted AI difficulty
+        };
+
+        // Ball
+        let ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 10,
+            color: "white",
+            dx: 4,
+            dy: -4
+        };
+
+        // Keyboard event listeners
+        document.addEventListener("keydown", keyDownHandler);
+        document.addEventListener("keyup", keyUpHandler);
+
+        // Keyboard input handling
+        let keys = {};
+        function keyDownHandler(e) {
+            keys[e.key] = true;
+        }
+
+        function keyUpHandler(e) {
+            keys[e.key] = false;
+        }
+
+        // Update function
+        function update() {
+            // Move paddles based on keyboard input
+            if (keys['w'] && paddleA.y > 0) {
+                paddleA.y -= paddleA.dy;
+            }
+            if (keys['s'] && paddleA.y + paddleA.height < canvas.height) {
+                paddleA.y += paddleA.dy;
+            }
+
+            // Move the right paddle (AI)
+            aiControl();
+
+            // Move the ball
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Ball collisions with walls
+            if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
+                ball.dy *= -1;
+            }
+
+            // Ball collisions with paddles
+            if (
+                ball.x - ball.radius < paddleA.x + paddleA.width &&
+                ball.y > paddleA.y &&
+                ball.y < paddleA.y + paddleA.height
+            ) {
+                ball.dx *= -1;
+            }
+
+            if (
+                ball.x + ball.radius > paddleB.x &&
+                ball.y > paddleB.y &&
+                ball.y < paddleB.y + paddleB.height
+            ) {
+                ball.dx *= -1;
+            }
+
+            // Ball out of bounds
+            if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) {
+                resetBall();
+            }
+        }
+
+        // Draw function
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw paddles
+            ctx.fillStyle = paddleA.color;
+            ctx.fillRect(paddleA.x, paddleA.y, paddleA.width, paddleA.height);
+
+            ctx.fillStyle = paddleB.color;
+            ctx.fillRect(paddleB.x, paddleB.y, paddleB.width, paddleB.height);
+
+            // Draw ball
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = ball.color;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        // Game over message
+        function displayMessage(message) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "white";
+            ctx.font = "30px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+        }
+
+        // Reset ball position
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.dx = 4;
+            ball.dy = -4;
+
+            // Randomly determine if the player wins or loses
+            const userWins = Math.random() < 0.5; // 50%
+
+            // Display win or lose message
+            if (userWins) {
+                displayMessage("You Win!");
+            } else {
+                displayMessage("Game Over - Try Again!");
+            }
+
+            // Restart the game after a delay
+            setTimeout(() => {
+                displayMessage(""); // Clear the message
+                paddleA.y = canvas.height / 2 - 50;
+                paddleB.y = canvas.height / 2 - 50;
+            }, 2000); // Wait for 2 seconds before restarting
+        }
+
+        // AI control for Paddle B
+        function aiControl() {
+            // Fixed AI control
+            const paddleBCenter = paddleB.y + paddleB.height / 2;
+            if (paddleBCenter < ball.y - 10) {
+                paddleB.y += paddleB.dy;
+            } else if (paddleBCenter > ball.y + 10) {
+                paddleB.y -= paddleB.dy;
+            }
+        }
+
+        // Main game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game loop
+        gameLoop();
+    </script>
+</body>
+</html>
